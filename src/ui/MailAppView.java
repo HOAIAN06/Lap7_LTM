@@ -21,6 +21,7 @@ import models.Mail;
 
 public class MailAppView {
     private final Label sessionLabel = new Label("Chưa đăng nhập");
+    private final Label senderUsernameLabel = new Label("(Chưa đăng nhập)");
     private final TextArea inboxArea = new TextArea();
 
     private Consumer<AuthForm> onRegister;
@@ -66,8 +67,10 @@ public class MailAppView {
     public void showSession(String username) {
         if (username == null || username.isBlank()) {
             sessionLabel.setText("Chưa đăng nhập");
+            senderUsernameLabel.setText("(Chưa đăng nhập)");
         } else {
             sessionLabel.setText("Đang đăng nhập: " + username);
+            senderUsernameLabel.setText(username);
         }
     }
 
@@ -81,7 +84,8 @@ public class MailAppView {
         for (int i = 0; i < mails.size(); i++) {
             Mail mail = mails.get(i);
             builder.append("--- Email ").append(i + 1).append(" ---\n")
-                    .append("Từ: ").append(mail.sender).append('\n')
+                    .append("Username người gửi: ").append(mail.sender).append('\n')
+                    .append("Gmail người nhận: ").append(mail.receiver).append('\n')
                     .append("Tiêu đề: ").append(mail.subject).append('\n')
                     .append("Nội dung:\n").append(mail.content).append("\n\n");
         }
@@ -133,8 +137,6 @@ public class MailAppView {
     }
 
     private VBox buildSendPane() {
-        TextField senderField = new TextField();
-        TextField appPasswordField = new TextField();
         TextField receiverField = new TextField();
         TextField subjectField = new TextField();
         TextArea contentArea = new TextArea();
@@ -144,8 +146,6 @@ public class MailAppView {
         sendButton.setOnAction(e -> {
             if (onSend != null) {
                 onSend.accept(new SendForm(
-                        senderField.getText(),
-                        appPasswordField.getText(),
                         receiverField.getText(),
                         subjectField.getText(),
                         contentArea.getText()
@@ -154,24 +154,21 @@ public class MailAppView {
         });
 
         GridPane form = formGrid();
-        form.add(new Label("Gmail người gửi"), 0, 0);
-        form.add(senderField, 1, 0);
-        form.add(new Label("App Password"), 0, 1);
-        form.add(appPasswordField, 1, 1);
-        form.add(new Label("Email người nhận"), 0, 2);
-        form.add(receiverField, 1, 2);
-        form.add(new Label("Tiêu đề"), 0, 3);
-        form.add(subjectField, 1, 3);
-        form.add(new Label("Nội dung"), 0, 4);
-        form.add(contentArea, 1, 4);
+        form.add(new Label("Username người gửi"), 0, 0);
+        form.add(senderUsernameLabel, 1, 0);
+        form.add(new Label("Email người nhận"), 0, 1);
+        form.add(receiverField, 1, 1);
+        form.add(new Label("Tiêu đề"), 0, 2);
+        form.add(subjectField, 1, 2);
+        form.add(new Label("Nội dung"), 0, 3);
+        form.add(contentArea, 1, 3);
         GridPane.setVgrow(contentArea, Priority.ALWAYS);
 
         return new VBox(12, form, sendButton);
     }
 
     private VBox buildReadPane() {
-        TextField gmailField = new TextField();
-        TextField appPasswordField = new TextField();
+        TextField receiverGmailField = new TextField();
         Button readButton = new Button("Đọc hộp thư");
         inboxArea.setEditable(false);
         inboxArea.setWrapText(true);
@@ -179,15 +176,13 @@ public class MailAppView {
 
         readButton.setOnAction(e -> {
             if (onRead != null) {
-                onRead.accept(new ReadForm(gmailField.getText(), appPasswordField.getText()));
+                onRead.accept(new ReadForm(receiverGmailField.getText()));
             }
         });
 
         GridPane form = formGrid();
-        form.add(new Label("Địa chỉ Gmail"), 0, 0);
-        form.add(gmailField, 1, 0);
-        form.add(new Label("App Password"), 0, 1);
-        form.add(appPasswordField, 1, 1);
+        form.add(new Label("Gmail người nhận"), 0, 0);
+        form.add(receiverGmailField, 1, 0);
 
         return new VBox(12, form, readButton, inboxArea);
     }
@@ -218,15 +213,11 @@ public class MailAppView {
     }
 
     public static class SendForm {
-        public final String sender;
-        public final String appPassword;
         public final String receiver;
         public final String subject;
         public final String content;
 
-        public SendForm(String sender, String appPassword, String receiver, String subject, String content) {
-            this.sender = sender;
-            this.appPassword = appPassword;
+        public SendForm(String receiver, String subject, String content) {
             this.receiver = receiver;
             this.subject = subject;
             this.content = content;
@@ -234,12 +225,10 @@ public class MailAppView {
     }
 
     public static class ReadForm {
-        public final String gmail;
-        public final String appPassword;
+        public final String receiverGmail;
 
-        public ReadForm(String gmail, String appPassword) {
-            this.gmail = gmail;
-            this.appPassword = appPassword;
+        public ReadForm(String receiverGmail) {
+            this.receiverGmail = receiverGmail;
         }
     }
 }

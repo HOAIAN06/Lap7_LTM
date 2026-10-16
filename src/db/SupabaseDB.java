@@ -1,28 +1,34 @@
 package db;
 
-import models.Mail;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import models.Mail;
 
 public class SupabaseDB {
     private static final String URL =
-            "jdbc:postgresql://db.yqoasqcynanjhbtgpfuq.supabase.co:5432/postgres?sslmode=require";
-    private static final String USER = "postgres";
+            "jdbc:postgresql://aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres?sslmode=require";
+    private static final String USER = "postgres.enngpmqfurpjkuhpzqod";
     private static final String PASSWORD = "xjQTiDiHERZdgH9g";
 
     // Mở kết nối JDBC tới PostgreSQL trên Supabase.
     // Tham số: không có.
-    // Trả về: đối tượng Connection nếu kết nối thành công, null nếu xảy ra lỗi.
+    // Trả về: đối tượng Connection nếu kết nối thành công.
     public Connection getConnection() {
         try {
             return DriverManager.getConnection(URL, USER, PASSWORD);
         } catch (SQLException e) {
             e.printStackTrace();
-            return null;
+            throw new IllegalStateException(
+                    "Không kết nối được Supabase. Kiểm tra mạng hoặc project đã Pause chưa. Chi tiết: "
+                            + e.getMessage(),
+                    e
+            );
         }
     }
 
@@ -32,16 +38,11 @@ public class SupabaseDB {
     public boolean registerUser(String username, String password) {
         String sql = "INSERT INTO users (username, password) VALUES (?, ?)";
 
-        try (Connection connection = getConnection()) {
-            if (connection == null) {
-                return false;
-            }
-
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, username);
-                statement.setString(2, password);
-                return statement.executeUpdate() == 1;
-            }
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, username);
+            statement.setString(2, password);
+            return statement.executeUpdate() == 1;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -54,18 +55,13 @@ public class SupabaseDB {
     public boolean loginUser(String username, String password) {
         String sql = "SELECT 1 FROM users WHERE username = ? AND password = ?";
 
-        try (Connection connection = getConnection()) {
-            if (connection == null) {
-                return false;
-            }
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, username);
+            statement.setString(2, password);
 
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, username);
-                statement.setString(2, password);
-
-                try (ResultSet result = statement.executeQuery()) {
-                    return result.next();
-                }
+            try (ResultSet result = statement.executeQuery()) {
+                return result.next();
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -83,21 +79,45 @@ public class SupabaseDB {
 
         String sql = "INSERT INTO mails (sender, receiver, subject, content) VALUES (?, ?, ?, ?)";
 
-        try (Connection connection = getConnection()) {
-            if (connection == null) {
-                return false;
-            }
-
-            try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setString(1, mail.sender);
-                statement.setString(2, mail.receiver);
-                statement.setString(3, mail.subject);
-                statement.setString(4, mail.content);
-                return statement.executeUpdate() == 1;
-            }
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, mail.sender);
+            statement.setString(2, mail.receiver);
+            statement.setString(3, mail.subject);
+            statement.setString(4, mail.content);
+            return statement.executeUpdate() == 1;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
+    }
+
+    // Lấy danh sách thư theo Gmail người nhận từ bảng mails.
+    // Tham số: receiver - địa chỉ Gmail người nhận.
+    // Trả về: danh sách Mail (sender = username người gửi).
+    public List<Mail> getMailsByReceiver(String receiver) {
+        String sql = "SELECT sender, receiver, subject, content FROM mails WHERE receiver = ? ORDER BY id DESC";
+        List<Mail> mails = new ArrayList<>();
+
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, receiver);
+
+            try (ResultSet result = statement.executeQuery()) {
+                while (result.next()) {
+                    mails.add(new Mail(
+                            result.getString("sender"),
+                            result.getString("receiver"),
+                            result.getString("subject"),
+                            result.getString("content")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new IllegalStateException("Không đọc được mail từ database: " + e.getMessage(), e);
+        }
+
+        return mails;
     }
 }

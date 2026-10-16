@@ -44,31 +44,30 @@ public class AppService {
         currentUser = null;
     }
 
-    // Gửi mail qua Gmail và lưu lịch sử vào DB.
-    // Tham số: sender, appPassword, receiver, subject, content.
-    // Trả về: true nếu gửi và lưu DB đều thành công; false nếu gửi được nhưng lưu DB thất bại.
-    public boolean sendMail(String sender, String appPassword, String receiver, String subject, String content)
-            throws Exception {
+    // Gửi mail qua Gmail cố định trong code, lưu lịch sử với sender = username đã đăng nhập.
+    // Tham số: receiver, subject, content.
+    // Trả về: true nếu gửi và lưu DB đều thành công.
+    public boolean sendMail(String receiver, String subject, String content) throws Exception {
         if (!isLoggedIn()) {
             throw new IllegalStateException("Vui lòng đăng nhập trước khi gửi mail.");
         }
-        if (isBlank(sender) || isBlank(appPassword) || isBlank(receiver)) {
-            throw new IllegalArgumentException("Vui lòng nhập Gmail gửi, App Password và email nhận.");
+        if (isBlank(receiver)) {
+            throw new IllegalArgumentException("Vui lòng nhập email người nhận.");
         }
 
-        Mail mail = new Mail(sender.trim(), receiver.trim(), nullToEmpty(subject), nullToEmpty(content));
-        MailProtocol.sendEmailViaGmail(mail, appPassword);
+        Mail mail = new Mail(currentUser, receiver.trim(), nullToEmpty(subject), nullToEmpty(content));
+        MailProtocol.sendEmailViaGmail(mail);
         return database.saveMailToDb(mail);
     }
 
-    // Đọc hộp thư đến qua POP3.
-    // Tham số: gmail, appPassword.
+    // Đọc hộp thư từ Database theo Gmail người nhận.
+    // Tham số: receiverGmail.
     // Trả về: danh sách thư.
-    public List<Mail> readMails(String gmail, String appPassword) throws Exception {
-        if (isBlank(gmail) || isBlank(appPassword)) {
-            throw new IllegalArgumentException("Vui lòng nhập Gmail và App Password.");
+    public List<Mail> readMails(String receiverGmail) {
+        if (isBlank(receiverGmail)) {
+            throw new IllegalArgumentException("Vui lòng nhập Gmail người nhận để đọc hộp thư.");
         }
-        return MailProtocol.readEmails(gmail.trim(), appPassword);
+        return database.getMailsByReceiver(receiverGmail.trim());
     }
 
     private static boolean isBlank(String value) {
