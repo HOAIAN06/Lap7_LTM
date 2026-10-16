@@ -57,7 +57,7 @@ public class MailAppController {
 
     private void handleSend(SendForm form) {
         runBackground(() -> {
-            boolean saved = appService.sendMail(form.receiver, form.subject, form.content);
+            boolean saved = appService.sendMail(form.sender, form.receiver, form.subject, form.content);
             Platform.runLater(() -> {
                 if (saved) {
                     view.showInfo("Gửi và lưu mail thành công.");

@@ -21,7 +21,6 @@ import models.Mail;
 
 public class MailAppView {
     private final Label sessionLabel = new Label("Chưa đăng nhập");
-    private final Label senderUsernameLabel = new Label("(Chưa đăng nhập)");
     private final TextArea inboxArea = new TextArea();
 
     private Consumer<AuthForm> onRegister;
@@ -67,10 +66,8 @@ public class MailAppView {
     public void showSession(String username) {
         if (username == null || username.isBlank()) {
             sessionLabel.setText("Chưa đăng nhập");
-            senderUsernameLabel.setText("(Chưa đăng nhập)");
         } else {
             sessionLabel.setText("Đang đăng nhập: " + username);
-            senderUsernameLabel.setText(username);
         }
     }
 
@@ -84,7 +81,7 @@ public class MailAppView {
         for (int i = 0; i < mails.size(); i++) {
             Mail mail = mails.get(i);
             builder.append("--- Email ").append(i + 1).append(" ---\n")
-                    .append("Username người gửi: ").append(mail.sender).append('\n')
+                    .append("Gmail người gửi: ").append(mail.sender).append('\n')
                     .append("Gmail người nhận: ").append(mail.receiver).append('\n')
                     .append("Tiêu đề: ").append(mail.subject).append('\n')
                     .append("Nội dung:\n").append(mail.content).append("\n\n");
@@ -137,6 +134,7 @@ public class MailAppView {
     }
 
     private VBox buildSendPane() {
+        TextField senderField = new TextField();
         TextField receiverField = new TextField();
         TextField subjectField = new TextField();
         TextArea contentArea = new TextArea();
@@ -146,6 +144,7 @@ public class MailAppView {
         sendButton.setOnAction(e -> {
             if (onSend != null) {
                 onSend.accept(new SendForm(
+                        senderField.getText(),
                         receiverField.getText(),
                         subjectField.getText(),
                         contentArea.getText()
@@ -154,8 +153,8 @@ public class MailAppView {
         });
 
         GridPane form = formGrid();
-        form.add(new Label("Username người gửi"), 0, 0);
-        form.add(senderUsernameLabel, 1, 0);
+        form.add(new Label("Gmail người gửi"), 0, 0);
+        form.add(senderField, 1, 0);
         form.add(new Label("Email người nhận"), 0, 1);
         form.add(receiverField, 1, 1);
         form.add(new Label("Tiêu đề"), 0, 2);
@@ -213,11 +212,13 @@ public class MailAppView {
     }
 
     public static class SendForm {
+        public final String sender;
         public final String receiver;
         public final String subject;
         public final String content;
 
-        public SendForm(String receiver, String subject, String content) {
+        public SendForm(String sender, String receiver, String subject, String content) {
+            this.sender = sender;
             this.receiver = receiver;
             this.subject = subject;
             this.content = content;

@@ -10,11 +10,14 @@ import jakarta.mail.internet.MimeMessage;
 import models.Mail;
 
 public class MailProtocol {
-    private static final String GMAIL = "lequocdinhkt@gmail.com";
+    // Tài khoản SMTP thật sự dùng để gửi (auth).
+    private static final String SMTP_GMAIL = "lequocdinhkt@gmail.com";
     private static final String APP_PASSWORD = "fiad zfjg lnmz vxtp";
 
-    // Gửi email qua SMTP Gmail (tài khoản cố định trong code).
-    // Tham số: mail (receiver/subject/content; sender trong mail là username app, không dùng làm From SMTP).
+    // Gửi email qua SMTP.
+    // From trên thư = mail.sender (Gmail người gửi nhập trên form).
+    // Auth SMTP vẫn dùng tài khoản cố định trong code.
+    // Tham số: mail (sender/receiver/subject/content).
     // Trả về: void (ném Exception nếu gửi thất bại).
     public static void sendEmailViaGmail(Mail mail) throws Exception {
         Properties properties = new Properties();
@@ -25,16 +28,13 @@ public class MailProtocol {
 
         Session session = Session.getInstance(properties);
         MimeMessage message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(GMAIL));
+        message.setFrom(new InternetAddress(mail.sender));
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(mail.receiver));
         message.setSubject(mail.subject, "UTF-8");
-        message.setText(
-                "Người gửi (username): " + mail.sender + "\n\n" + mail.content,
-                "UTF-8"
-        );
+        message.setText(mail.content, "UTF-8");
 
         try (Transport transport = session.getTransport("smtp")) {
-            transport.connect("smtp.gmail.com", GMAIL, APP_PASSWORD);
+            transport.connect("smtp.gmail.com", SMTP_GMAIL, APP_PASSWORD);
             transport.sendMessage(message, message.getAllRecipients());
         }
     }

@@ -44,18 +44,23 @@ public class AppService {
         currentUser = null;
     }
 
-    // Gửi mail qua Gmail cố định trong code, lưu lịch sử với sender = username đã đăng nhập.
-    // Tham số: receiver, subject, content.
+    // Gửi mail: From = Gmail người gửi (nhập form), auth SMTP = tài khoản trong code.
+    // Tham số: senderGmail, receiver, subject, content.
     // Trả về: true nếu gửi và lưu DB đều thành công.
-    public boolean sendMail(String receiver, String subject, String content) throws Exception {
+    public boolean sendMail(String senderGmail, String receiver, String subject, String content) throws Exception {
         if (!isLoggedIn()) {
             throw new IllegalStateException("Vui lòng đăng nhập trước khi gửi mail.");
         }
-        if (isBlank(receiver)) {
-            throw new IllegalArgumentException("Vui lòng nhập email người nhận.");
+        if (isBlank(senderGmail) || isBlank(receiver)) {
+            throw new IllegalArgumentException("Vui lòng nhập Gmail người gửi và email người nhận.");
         }
 
-        Mail mail = new Mail(currentUser, receiver.trim(), nullToEmpty(subject), nullToEmpty(content));
+        Mail mail = new Mail(
+                senderGmail.trim(),
+                receiver.trim(),
+                nullToEmpty(subject),
+                nullToEmpty(content)
+        );
         MailProtocol.sendEmailViaGmail(mail);
         return database.saveMailToDb(mail);
     }
