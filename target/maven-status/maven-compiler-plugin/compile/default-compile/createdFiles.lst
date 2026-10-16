@@ -1,0 +1,13 @@
+models\Mail.class
+service\AppService.class
+ui\MailAppController$1.class
+db\SupabaseDB.class
+ui\MailAppView$AuthForm.class
+ui\MailAppController.class
+models\User.class
+ui\MailAppView.class
+Main.class
+ui\MailAppView$SendForm.class
+network\MailProtocol.class
+ui\MailAppController$CheckedAction.class
+ui\MailAppView$ReadForm.class
